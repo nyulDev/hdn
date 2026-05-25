@@ -1,0 +1,158 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: hsl(0 0% 100%);
+  --foreground: hsl(0 0% 14%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(0 0% 14%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(0 0% 14%);
+  --primary: hsl(150 72% 46%);
+  --primary-foreground: hsl(0 0% 14%);
+  --secondary: hsl(0 0% 97%);
+  --secondary-foreground: hsl(0 0% 20%);
+  --muted: hsl(0 0% 97%);
+  --muted-foreground: hsl(0 0% 56%);
+  --accent: hsl(0 0% 97%);
+  --accent-foreground: hsl(0 0% 20%);
+  --destructive: hsl(346 77% 40%);
+  --border: hsl(0 0% 92%);
+  --input: hsl(0 0% 92%);
+  --ring: hsl(150 72% 46% / 0.5);
+  --chart-1: hsl(41 77% 52%);
+  --chart-2: hsl(185 63% 51%);
+  --chart-3: hsl(227 52% 47%);
+  --chart-4: hsl(84 66% 62%);
+  --chart-5: hsl(70 63% 56%);
+  --sidebar: hsl(0 0% 98%);
+  --sidebar-foreground: hsl(0 0% 14%);
+  --sidebar-primary: hsl(150 72% 46%);
+  --sidebar-primary-foreground: hsl(0 0% 14%);
+  --sidebar-accent: hsl(0 0% 97%);
+  --sidebar-accent-foreground: hsl(0 0% 20%);
+  --sidebar-border: hsl(0 0% 92%);
+  --sidebar-ring: hsl(150 72% 46% / 0.5);
+}
+
+.dark {
+  --background: hsl(0 0% 14%);
+  --foreground: hsl(0 0% 98%);
+  --card: hsl(0 0% 20%);
+  --card-foreground: hsl(0 0% 98%);
+  --popover: hsl(0 0% 20%);
+  --popover-foreground: hsl(0 0% 98%);
+  --primary: hsl(150 72% 46%);
+  --primary-foreground: hsl(0 0% 14%);
+  --secondary: hsl(0 0% 27%);
+  --secondary-foreground: hsl(0 0% 98%);
+  --muted: hsl(0 0% 27%);
+  --muted-foreground: hsl(0 0% 71%);
+  --accent: hsl(0 0% 27%);
+  --accent-foreground: hsl(0 0% 98%);
+  --destructive: hsl(22 59% 57%);
+  --border: hsl(0 0% 100% / 10%);
+  --input: hsl(0 0% 100% / 15%);
+  --ring: hsl(150 72% 46% / 0.5);
+  --chart-1: hsl(264 60% 53%);
+  --chart-2: hsl(162 47% 56%);
+  --chart-3: hsl(70 63% 56%);
+  --chart-4: hsl(304 56% 59%);
+  --chart-5: hsl(16 65% 57%);
+  --sidebar: hsl(0 0% 20%);
+  --sidebar-foreground: hsl(0 0% 98%);
+  --sidebar-primary: hsl(150 72% 46%);
+  --sidebar-primary-foreground: hsl(0 0% 14%);
+  --sidebar-accent: hsl(0 0% 27%);
+  --sidebar-accent-foreground: hsl(0 0% 98%);
+  --sidebar-border: hsl(0 0% 100% / 10%);
+  --sidebar-ring: hsl(150 72% 46% / 0.5);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Print styles */
+@media print {
+  /* Hide sidebar */
+  nav,
+  aside,
+  .sidebar,
+  [class*="sidebar"] {
+    display: none !important;
+  }
+
+  /* Hide header */
+  header {
+    display: none !important;
+  }
+
+  /* Hide footer */
+  footer {
+    display: none !important;
+  }
+
+  /* Reset body and main content */
+  body {
+    background: white !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Ensure content takes full width */
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+}

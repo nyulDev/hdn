@@ -1,0 +1,227 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  title     String
+  content   String?
+  published Boolean  @default(false)
+  authorId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Penawaran {
+  id          String    @id @default(cuid())
+  pt          String
+  kapal       String?
+  noQuo       String
+  noPenawaran String    @unique
+  pn          String?
+  tanggal     DateTime? @default(now())
+  departemen  String?
+  namaMesin   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Modal {
+  id                    String    @id @default(cuid())
+  pt                    String?
+  noQuo                 String
+  kodeImpa              String?
+  pn                    String?
+  description           String
+  location              String?
+  qty                   Float
+  satuan                String
+  unitPrice             Float
+  amount                Float
+  tanggal               DateTime?
+  customerId            String?
+  isAktual              Boolean   @default(false)
+  discount              Float?
+  totalModalSperpart    Float?
+  bankCharge            Float?
+  packingCost           Float?
+  deliveryDutyTax       Float?
+  deliveryAirDHL        Float?
+  deliveryAirDoorToDoor Float?
+  deliverySeaResmi      Float?
+  deliverySeaDoorToDoor Float?
+  deliveryLocalCost     Float?
+  feeKurir              Float?
+  otherCostTruck        Float?
+  otherCostServiceBoat  Float?
+  otherCostLainLain     Float?
+  hsi                   Float?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  nilaiAktual           Float?
+  noPenawaran           String?
+  namaToko              String?
+  disc                  Float?
+  layanan               Float?
+  onkir                 Float?
+}
+
+model QuoPpn {
+  id           String    @id @default(cuid())
+  tanggal      DateTime?
+  noQuo        String
+  noPt         String
+  noPenawaran  String
+  pn           String
+  description  String
+  kodeImpa     String?
+  qty          Float
+  /// Total qty yang sudah pernah ter-invoice (terpakai)
+  invoicedQty  Float     @default(0)
+  satuan       String
+  unitPriceNew Float
+  totalNew     Float
+  isInvoiced   Boolean   @default(false)
+  isTtb        Boolean   @default(false)
+  /// Qty yang benar-benar sudah di-TTB (untuk kasus partial)
+  ttbQty       Float?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Customer {
+  id         String      @id @default(cuid())
+  customerId String
+  ptMv       String
+  alamat     String?
+  kontak     String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  kapal      String?
+  penjualans Penjualan[]
+}
+
+model Penjualan {
+  id                  String    @id @default(cuid())
+  tanggal             DateTime
+  customerId          String
+  noInvoice           String    @unique
+  invoiceSebelumPajak Float
+  ppnSktd             Float
+  invoiceAfterTax     Float
+  pengajuanModal      Float
+  pembelianAktual     Float
+  grossProfit         Float
+  marketingFee        Float
+  bansos              Float
+  bagiHasilHsi        Float
+  netProfit           Float
+  paymentStatus       String    @default("Belum Lunas")
+  lunasDate           DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  noPenawaran         String?
+  customer            Customer  @relation(fields: [customerId], references: [id])
+
+  @@map("penjualans")
+}
+
+model ModalCost {
+  id                     String   @id @default(cuid())
+  noQuo                  String   @unique
+  discount               Float?
+  totalModalSperpart     Float?
+  bankCharge             Float?
+  packingCost            Float?
+  deliveryDutyTax        Float?
+  deliveryAirDHL         Float?
+  deliveryAirDoorToDoor  Float?
+  deliverySeaResmi       Float?
+  deliverySeaDoorToDoor  Float?
+  deliveryLocalCost      Float?
+  feeKurir               Float?
+  otherCostTruck         Float?
+  otherCostServiceBoat   Float?
+  otherCostLainLain      Float?
+  hsi                    Float?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  deliveryDutyTaxPercent Float?
+}
+
+model ModalAktualCost {
+  id                     String   @id @default(cuid())
+  noQuo                  String   @unique
+  discount               Float?
+  totalModalSperpart     Float?
+  bankCharge             Float?
+  packingCost            Float?
+  deliveryDutyTax        Float?
+  deliveryDutyTaxPercent Float?
+  deliveryAirDHL         Float?
+  deliveryAirDoorToDoor  Float?
+  deliverySeaResmi       Float?
+  deliverySeaDoorToDoor  Float?
+  deliveryLocalCost      Float?
+  feeKurir               Float?
+  otherCostTruck         Float?
+  otherCostServiceBoat   Float?
+  otherCostLainLain      Float?
+  hsi                    Float?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+model ReportQuo {
+  id         String   @id @default(cuid())
+  noQuo      String   @unique
+  atsn       String?
+  note       String?
+  discount   Float?
+
+  /// TRUE jika No. Quo tersebut menggunakan SKTD (tanpa PPN)
+  sktd       Boolean  @default(false)
+
+  /// TRUE jika No. Quo tersebut menggunakan Bansos (5%)
+  bansosUsed Boolean  @default(false)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  delivery   String?
+  price      String?
+}
+
+
+model ReportInv {
+  id                 String   @id @default(cuid())
+  noPenawaran        String   @unique
+  atsn               String?
+  discount           Float?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  discountAmount     Float?
+  dpp                Float?
+  kapal              String?
+  location           String?
+  namaMesin          String?
+  pn                 String?
+  ppn                Float?
+  subtotal           Float?
+  totalAfterDiscount Float?
+  totalInvoice       Float?
+  customerId         String?
+  pt                 String?
+}

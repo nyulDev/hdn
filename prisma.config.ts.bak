@@ -1,0 +1,7 @@
+import { PrismaClient } from "@prisma/client";
+
+// Used by app code; Prisma CLI does NOT read this file.
+// Keep it valid TypeScript.
+const prisma = new PrismaClient();
+
+export default prisma;
