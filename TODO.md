@@ -1,8 +1,7 @@
-# TODO
+# TODO - Bansos sync fix
 
-- [x] Optimasi performa modal detail di `src/app/modal-aktual/page.tsx`
-  - [x] Hapus retry+delay pada `refreshDetailData`
-  - [x] Tambahkan AbortController untuk membatalkan request detail sebelumnya saat klik cepat
-  - [x] Tambahkan cache detail per `noQuo` sehingga klik untuk `noQuo` yang sama langsung tampil
-- [x] Pastikan UI loading/error tetap berfungsi
-  - [ ] Jalankan dev server & uji klik detail cepat/berulang
+- [x] Understand flow: profit/report-quo-bansos should populate `Penjualan.bansos`
+- [x] Inspect `GET /api/penjualan` keying: `noInvoice` is used and is `penawaran.noQuo` (trimmed)
+- [x] Fix `POST /api/penjualan-sync-bansos-from-profit` update-by-key mismatch by trimming `noInvoice` input
+- [x] Fix fallback update-by-`noPenawaran` to match trimmed string exactly
+- [ ] Run endpoint POST for failing case (example: noQuo=0002-PH) and verify `/penjualan` shows updated `bansos`

@@ -316,13 +316,16 @@ export default function ModalAktualPage() {
           }
         }
 
-        // HSI 2 Bulan (dibulatkan integer). Pakai angka yang tersimpan di existingCost saat ada.
+        // HSI - 2 Bulan (dibulatkan integer). Pakai angka yang tersimpan di existingCost saat ada.
         const hsiRounded = existingCost?.hsi
           ? Math.round(parseFloat(existingCost.hsi))
           : 0;
-        const totalCostIncludingHsi = totalCost + hsiRounded;
-        // Total Keseluruhan = Total Sperpart + Total Cost (termasuk HSI)
-        const totalKeseluruhan = totalCostIncludingHsi + itemSubTotal;
+
+        // Total Cost harus murni: Bank..Lainlain - Discount (tanpa HSI)
+        const totalCostMurni = totalCost;
+
+        // Total Keseluruhan = Total Sperpart + Total Cost (tanpa HSI) + HSI
+        const totalKeseluruhan = totalCostMurni + hsiRounded + itemSubTotal;
 
         grouped[modal.noPenawaran] = {
           noPenawaran: modal.noPenawaran,
@@ -331,7 +334,8 @@ export default function ModalAktualPage() {
           kapal: penawaran?.kapal || "",
           tanggal: penawaran?.tanggal || "",
           itemSubTotal,
-          totalCost: totalCostIncludingHsi,
+          totalCost: totalCostMurni,
+          hsiRounded,
           totalKeseluruhan,
           hasCost,
           items: [],
@@ -1545,6 +1549,7 @@ export default function ModalAktualPage() {
                   <TableHead className="text-left items-end">
                     Total Cost
                   </TableHead>
+                  <TableHead className="text-left items-end">HSI</TableHead>
                   <TableHead className="text-left items-end font-bold">
                     Total Keseluruhan
                   </TableHead>
@@ -1578,6 +1583,9 @@ export default function ModalAktualPage() {
                           Cost
                         </span>
                       )}
+                    </TableCell>
+                    <TableCell className="font-bold items-end">
+                      Rp {formatCurrency(group.hsiRounded || 0)}
                     </TableCell>
                     <TableCell className="font-bold items-end">
                       Rp {formatCurrency(group.totalKeseluruhan)}

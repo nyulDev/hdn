@@ -79,10 +79,10 @@ export default function ModalAktualReportPage() {
       const data: ModalData[] = await modalRes.json();
       const penawarans: any[] = await penawaranRes.json();
       const customersData: any[] = await customerRes.json();
-      setModals(data);
+
       setCustomers(customersData);
 
-      // Extract unique noPenawaran/pt/noQuo for dropdown
+      // Extract unique noPenawaran/pt/noQuo for dropdown (match model modal page behavior)
       const uniqueList = Array.from(
         new Map(
           data
@@ -94,7 +94,7 @@ export default function ModalAktualReportPage() {
                 const p = penawarans.find(
                   (pen) => pen.noPenawaran === item.noPenawaran,
                 );
-                ptName = p?.pt || "";
+                ptName = p?.pt || "PT Unknown";
               }
 
               return [
@@ -112,6 +112,9 @@ export default function ModalAktualReportPage() {
       );
 
       setUniqueRfsList(uniqueList);
+
+      // keep modals empty until filter selected (same UX as modal page)
+      setModals([]);
     } catch (error) {
       console.error("Error fetching modals:", error);
     }
@@ -124,6 +127,7 @@ export default function ModalAktualReportPage() {
     try {
       const response = await fetch(
         `/api/modal-aktual-cost?noQuo=${encodeURIComponent(noQuo)}`,
+        { cache: "no-store" },
       );
       if (response.ok) {
         const data = await response.json();
@@ -506,7 +510,7 @@ export default function ModalAktualReportPage() {
                 <div className="text-left">Fee Kurir :</div>
                 <div className="text-right">{formatRupiah(totalFeeKurir)}</div>
 
-                <div className="text-left">HSI - 2 Bulan :</div>
+                <div className="text-left">Sub Total :</div>
                 <div className="text-right">{formatRupiah(totalHsi)}</div>
 
                 <div className="text-left border-t border-[#d1d5db] mt-1 pt-1 font-bold">
@@ -536,14 +540,14 @@ export default function ModalAktualReportPage() {
             <div className="grid grid-cols-2 gap-2">
               <div className="text-left">Sub Total :</div>
               <div className="text-right font-semibold">
-                {formatRupiah(subTotal)}
+                {formatRupiah(totalModalSperpart)}
               </div>
 
-              <div className="text-left">Total Biaya Lain :</div>
-              <div className="text-right">{formatRupiah(totalAllCost)}</div>
+              <div className="text-left">Sub Total Biaya Lain :</div>
+              <div className="text-right">{formatRupiah(totalHsi)}</div>
 
               <div className="text-left font-bold bg-[#f3f4f6] py-1">
-                TOTAL MODAL AKTUAL (IDR) :
+                Total Keseluruhan :
               </div>
               <div className="text-right font-bold bg-[#f3f4f6] py-1">
                 {formatRupiah(totalModal)}

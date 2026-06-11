@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
       modalAktualCosts,
       pengajuanModals,
       aktualModals,
+      profits,
     ] = await Promise.all([
       prisma.reportInv.findMany({ orderBy: { createdAt: "desc" } }),
       prisma.penjualan.findMany({
@@ -61,6 +62,9 @@ export async function GET(request: NextRequest) {
       prisma.modal.findMany({
         where: { isAktual: true },
         select: { noQuo: true, amount: true },
+      }),
+      prisma.profit.findMany({
+        select: { noQuo: true, bansosAktual: true },
       }),
     ]);
 
@@ -85,6 +89,9 @@ export async function GET(request: NextRequest) {
     const modalCostMap = new Map(modalCosts.map((mc) => [mc.noQuo.trim(), mc]));
     const modalAktualCostMap = new Map(
       modalAktualCosts.map((mc) => [mc.noQuo.trim(), mc]),
+    );
+    const profitMap = new Map(
+      profits.map((p) => [p.noQuo.trim(), p.bansosAktual]),
     );
     const safeSum = (fields: number[]) =>
       fields.reduce((sum, field) => sum + (field || 0), 0);
@@ -116,6 +123,10 @@ export async function GET(request: NextRequest) {
 
     const data: ReportInvData[] = [];
     reportInvs.forEach((ri, index) => {
+      // DEBUG khusus noQuo=0002-PH (untuk investigasi bansos yang masih 0)
+      // (Kondisi: jika noInvoice (noQuo) kandidat = 0002-PH)
+      // Catatan: kita cek setelah noInvoice dihitung.
+
       const riKey = ri.noPenawaran.trim();
       console.log("🔍 DEBUG - Processing ri.noPenawaran (trim):", riKey);
       const penawaran = penawaranMap.get(riKey);
@@ -128,6 +139,14 @@ export async function GET(request: NextRequest) {
 
       const pt = (penawaran as any)?.pt || "Unknown";
       const noInvoice = (penawaran as any)?.noQuo || ri.noPenawaran;
+
+      if (String(noInvoice).trim() === "0002-PH") {
+        console.log("🧪 DEBUG Penjualan GET target noInvoice=0002-PH", {
+          riNoPenawaran: ri.noPenawaran,
+          penawaranNoQuo: (penawaran as any)?.noQuo,
+          computedNoInvoice: noInvoice,
+        });
+      }
 
       // Format Customer sebagai multiline dari data ReportInv
       const customerLines = [
@@ -209,9 +228,11 @@ export async function GET(request: NextRequest) {
 
       const penjualanStatus = penjualanMap.get(noInvoice);
 
-      // BANSOS: ambil dari DB (diset oleh endpoint sync dari Profit / ReportQuo)
-      // Jika belum terset, default 0.
-      const bansosValue = Number((penjualanStatus as any)?.bansos ?? 0);
+      // BANSOS: ambil dari Profit.bansosAktual, fallback ke penjualan.bansos
+      const profitBansosAktual = penawaran ? profitMap.get((penawaran as any).noQuo.trim()) : null;
+      const bansosValue = Math.round(
+        Number(profitBansosAktual ?? (penjualanStatus as any)?.bansos ?? 0),
+      );
 
       data.push({
         no: index + 1,

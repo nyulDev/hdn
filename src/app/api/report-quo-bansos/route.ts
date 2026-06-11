@@ -22,7 +22,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const updated = await prisma.reportQuo.upsert({
+    // 1) update ReportQuo (sumber historis bansosUsed)
+    const reportQuoUpdated = await prisma.reportQuo.upsert({
       where: { noQuo: noQuo.trim() },
       update: { bansosUsed: useBansos },
       create: {
@@ -31,7 +32,22 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(updated, { status: 200 });
+    // 2) update Profit (agar tabel profit juga terisi sesuai checkbox)
+    const profitUpserted = await prisma.profit.upsert({
+      where: { noQuo: noQuo.trim() },
+      update: {
+        bansosUsed: useBansos,
+      },
+      create: {
+        noQuo: noQuo.trim(),
+        bansosUsed: useBansos,
+      },
+    });
+
+    return NextResponse.json(
+      { reportQuo: reportQuoUpdated, profit: profitUpserted },
+      { status: 200 },
+    );
   } catch (error) {
     console.error("Error saving bansosUsed:", error);
     return NextResponse.json(

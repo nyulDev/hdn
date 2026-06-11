@@ -88,6 +88,8 @@ interface AgingData {
   bucket61Plus: number;
   paymentDate: string | null;
   agingStatus: "Current" | "0-30" | "31-60" | "61+";
+  rawInvDate: string;
+  rawDueDate: string;
 }
 
 function formatCurrency(value: number): string {
@@ -181,8 +183,7 @@ export default function SoaSatuanPage() {
     }
   };
 
-  // ========== PDF Laporan (Full Tabel dengan semua kolom) ==========
-  const generatePdfReport = (rows: AgingData[], customerPt: string) => {
+  const generatePdfReport = async (rows: AgingData[], customerPt: string) => {
     if (!rows.length) {
       toast({
         title: "Error",
@@ -198,71 +199,136 @@ export default function SoaSatuanPage() {
       format: "a4",
     });
     const pageWidth = doc.internal.pageSize.getWidth();
-    const today = new Date();
-    const todayId = today.toLocaleDateString("id-ID");
 
     // Header perusahaan
-    doc.setFontSize(20);
-    doc.setTextColor(22, 163, 74);
-    doc.text("S", 20, 20);
-    doc.setTextColor(30, 58, 138);
-    doc.text("OA ", 27, 20);
-    doc.setTextColor(22, 163, 74);
-    doc.text("S", 45, 20);
-    doc.setTextColor(30, 58, 138);
-    doc.text("atuan", 52, 20);
+    doc.setFont("times", "bold");
+    doc.setFontSize(22);
 
-    doc.setFontSize(10);
-    doc.setTextColor(75, 85, 99);
-    doc.text("Statement of Account", 20, 28);
-    doc.setFontSize(8);
-    doc.text("NPWP : 073.121.453.2 - 012.000", 20, 34);
+    let currentX = 15;
 
+    // H
+    doc.setTextColor(22, 163, 74); // Green
+    doc.text("H", currentX, 20);
+    currentX += doc.getTextWidth("H");
+
+    // ALUAN
+    doc.setTextColor(30, 58, 138); // Blue
+    doc.text("ALUAN ", currentX, 20);
+    currentX += doc.getTextWidth("ALUAN ");
+
+    // D
+    doc.setTextColor(22, 163, 74); // Green
+    doc.text("D", currentX, 20);
+    currentX += doc.getTextWidth("D");
+
+    // AYA
+    doc.setTextColor(30, 58, 138); // Blue
+    doc.text("AYA ", currentX, 20);
+    currentX += doc.getTextWidth("AYA ");
+
+    // N
+    doc.setTextColor(22, 163, 74); // Green
+    doc.text("N", currentX, 20);
+    currentX += doc.getTextWidth("N");
+
+    // IAGA, PT.
+    doc.setTextColor(30, 58, 138); // Blue
+    doc.text("IAGA, PT.", currentX, 20);
+
+    // Red line 1
+    doc.setDrawColor(220, 38, 38);
+    doc.setLineWidth(0.6);
+    doc.line(15, 23, 110, 23);
+
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
+    doc.setTextColor(22, 163, 74);
+    doc.text("w w w . h a l u a n - g r o u p . n e t", 15, 28);
+
+    // Red line 2
+    doc.line(15, 30, 110, 30);
+
+    // Try to draw logo
+    try {
+      const logoImg = new Image();
+      logoImg.src = "/logotok.png";
+      await new Promise((resolve) => {
+        logoImg.onload = resolve;
+        logoImg.onerror = resolve; // Just skip if error
+      });
+      if (logoImg.complete && logoImg.naturalWidth > 0) {
+        doc.addImage(logoImg, "PNG", pageWidth - 45, 12, 30, 30);
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    const boxY = 45;
+
+    // Box 1: DATE
+    doc.setDrawColor(220, 38, 38); // Red border
+    doc.setLineWidth(0.4);
+    doc.setFillColor(225, 225, 225); // Gray
+    doc.rect(15, boxY, 70, 6, "FD");
+    doc.setFillColor(255, 255, 255); // White
+    doc.rect(15, boxY + 6, 70, 6, "FD");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
     doc.setTextColor(0, 0, 0);
-    doc.text(`Date     : ${todayId}`, 20, 45);
-    doc.text(`Customer : ${customerPt || "-"}`, 20, 51);
+    doc.text("DATE", 15 + 35, boxY + 4.5, { align: "center" });
+    doc.setFont("helvetica", "normal");
+    const todayEng = format(new Date(), "EEEE, dd MMMM yyyy");
+    doc.text(todayEng, 15 + 35, boxY + 10.5, { align: "center" });
 
+    // Box 2: CUSTOMER
+    doc.setFillColor(225, 225, 225);
+    doc.rect(140, boxY, 70, 6, "FD");
+    doc.setFillColor(255, 255, 255);
+    doc.rect(140, boxY + 6, 70, 6, "FD");
+
+    doc.setFont("helvetica", "bold");
+    doc.text("CUSTOMER", 140 + 35, boxY + 4.5, { align: "center" });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.text(customerPt.toUpperCase(), 140 + 35, boxY + 10.5, {
+      align: "center",
+    });
+
+    // Box 3: Statement of Account
+    doc.setFillColor(235, 235, 235);
+    doc.rect(pageWidth - 65, boxY, 50, 12, "FD");
+    doc.setFont("helvetica", "bolditalic");
     doc.setFontSize(12);
-    doc.setTextColor(220, 38, 38);
-    doc.text("STATEMENT OF ACCOUNT", pageWidth / 2, 65, { align: "center" });
+    doc.setTextColor(0, 0, 0);
+    doc.text("Statement of Account", pageWidth - 40, boxY + 7.5, {
+      align: "center",
+    });
 
-    // Kolom tabel lengkap
-    const tableHeaders = [
-      "No",
-      "INV Date",
-      "Invoice No",
-      "PO No",
-      "Nama Kapal",
-      "Terms\n(Days)",
-      "Due Date",
-      "Amount (IDR)",
-      "0-30 Days",
-      "31-60 Days",
-      "61+ Days",
-      "Payment Date",
-    ];
-
+    // Table data preparation
     const totalAmount = rows.reduce((sum, r) => sum + (r.amount || 0), 0);
 
     const tableRows = rows.map((item, idx) => {
+      const bucket0 = item.bucket0_30 > 0 ? item.bucket0_30 : "";
+      const bucket31 = item.bucket31_60 > 0 ? item.bucket31_60 : "";
+      const bucket61 = item.bucket61Plus > 0 ? item.bucket61Plus : "";
+
       return [
         idx + 1,
-        item.invDate,
+        format(new Date(item.rawInvDate), "EEEE, dd MMMM yyyy"),
         item.invoiceNo,
         item.poNo,
         item.namaKapal,
         item.termsDays,
-        item.dueDate,
+        format(new Date(item.rawDueDate), "EEEE, dd MMMM yyyy"),
         formatCurrency(item.amount).replace("Rp", "").trim(),
-        item.bucket0_30,
-        item.bucket31_60,
-        item.bucket61Plus,
-        item.paymentDate || "-",
+        bucket0,
+        bucket31,
+        bucket61,
       ];
     });
 
-    // Baris total
+    // Total row
     tableRows.push([
       "",
       "",
@@ -275,61 +341,168 @@ export default function SoaSatuanPage() {
       "",
       "",
       "",
-      "",
     ]);
 
     autoTable(doc, {
-      startY: 72,
-      head: [tableHeaders],
+      startY: 65,
+      theme: "plain",
+      head: [
+        [
+          {
+            content: "NO",
+            rowSpan: 2,
+            styles: { halign: "center", valign: "middle" },
+          },
+          {
+            content: "INV. DATE",
+            rowSpan: 2,
+            styles: { halign: "center", valign: "middle" },
+          },
+          {
+            content: "INVOICE NO",
+            rowSpan: 2,
+            styles: { halign: "center", valign: "middle" },
+          },
+          {
+            content: "PO NO",
+            rowSpan: 2,
+            styles: { halign: "center", valign: "middle" },
+          },
+          {
+            content: "NAMA KAPAL",
+            rowSpan: 2,
+            styles: { halign: "center", valign: "middle" },
+          },
+          {
+            content: "TERMS (DAYS)",
+            rowSpan: 2,
+            styles: { halign: "center", valign: "middle" },
+          },
+          {
+            content: "DUE DATE",
+            rowSpan: 2,
+            styles: { halign: "center", valign: "middle" },
+          },
+          {
+            content: "AMOUNT",
+            rowSpan: 2,
+            styles: { halign: "center", valign: "middle" },
+          },
+          {
+            content: "DUE DATE (DAYS)",
+            colSpan: 3,
+            styles: { halign: "center" },
+          },
+        ],
+        [
+          { content: "0 - 30", styles: { halign: "center" } },
+          { content: "31 - 60", styles: { halign: "center" } },
+          { content: "> 61", styles: { halign: "center" } },
+        ],
+      ],
       body: tableRows,
-      theme: "striped",
+      margin: { left: 10, right: 10 },
+      styles: {
+        fontSize: 8,
+        cellPadding: 2,
+        textColor: [0, 0, 0],
+        valign: "middle",
+      },
       headStyles: {
-        fillColor: [41, 128, 185],
-        textColor: 255,
-        fontSize: 9,
-        halign: "center",
+        fillColor: [235, 235, 235],
+        textColor: [0, 0, 0],
+        lineColor: [220, 38, 38], // Red borders
+        lineWidth: 0.3,
+        fontStyle: "bold",
       },
-      bodyStyles: { fontSize: 8, cellPadding: 2 },
       columnStyles: {
-        0: { halign: "center", cellWidth: 8 },
-        1: { halign: "center", cellWidth: 16 },
-        2: { halign: "left", cellWidth: 28 },
-        3: { halign: "left", cellWidth: 22 },
-        4: { halign: "left", cellWidth: 40 },
-        5: { halign: "center", cellWidth: 12 },
-        6: { halign: "center", cellWidth: 16 },
-        7: { halign: "right", cellWidth: 28 },
-        8: { halign: "center", cellWidth: 12 },
-        9: { halign: "center", cellWidth: 12 },
-        10: { halign: "center", cellWidth: 12 },
-        11: { halign: "center", cellWidth: 18 },
+        0: { halign: "center" },
+        1: { halign: "center" },
+        2: { halign: "center" },
+        3: { halign: "center" },
+        4: { halign: "center" },
+        5: { halign: "center" },
+        6: { halign: "center" },
+        7: { halign: "right" },
+        8: { halign: "center" },
+        9: { halign: "center" },
+        10: { halign: "center" },
       },
-      didDrawCell: (dataCell) => {
+      didParseCell: (data) => {
+        // Body styling
+        if (data.section === "body") {
+          // Empty text for aging cells so we can draw custom badges
+          if (data.row.index !== tableRows.length - 1) {
+            if (data.column.index >= 8 && data.column.index <= 10) {
+              data.cell.text = [];
+            }
+          }
+
+          // Total row styling
+          if (data.row.index === tableRows.length - 1) {
+            data.cell.styles.fillColor = [220, 220, 220];
+            data.cell.styles.fontStyle = "bold";
+            data.cell.styles.lineColor = [0, 0, 0];
+            data.cell.styles.lineWidth = 0.3;
+          }
+        }
+
+        // Header specific styling for aging sub-columns
+        if (data.section === "head" && data.row.index === 1) {
+          if (data.column.index === 8) {
+            data.cell.styles.fillColor = [255, 255, 255];
+            data.cell.styles.textColor = [220, 38, 38];
+          } else if (data.column.index === 9) {
+            data.cell.styles.fillColor = [255, 255, 0];
+            data.cell.styles.textColor = [0, 0, 0];
+          } else if (data.column.index === 10) {
+            data.cell.styles.fillColor = [220, 38, 38];
+            data.cell.styles.textColor = [255, 255, 255];
+          }
+        }
+      },
+      didDrawCell: (data) => {
+        // Draw badges for aging cells
         if (
-          dataCell.section === "body" &&
-          dataCell.row.index === tableRows.length - 1
+          data.section === "body" &&
+          data.row.index !== tableRows.length - 1
         ) {
-          doc.setFont("helvetica", "bold");
-          doc.setTextColor(0, 0, 0);
-        } else {
-          // Reset font untuk baris lain
-          doc.setFont("helvetica", "normal");
+          if (data.column.index >= 8 && data.column.index <= 10) {
+            const val = data.cell.raw;
+            if (val !== "") {
+              const width = 12;
+              const height = 4.5;
+              const x = data.cell.x + data.cell.width / 2 - width / 2;
+              const y = data.cell.y + data.cell.height / 2 - height / 2;
+
+              if (data.column.index === 8) {
+                doc.setFillColor(255, 255, 255);
+                doc.setTextColor(220, 38, 38);
+              } else if (data.column.index === 9) {
+                doc.setFillColor(255, 255, 0);
+                doc.setTextColor(0, 0, 0);
+              } else if (data.column.index === 10) {
+                doc.setFillColor(220, 38, 38);
+                doc.setTextColor(255, 255, 255);
+              }
+
+              doc.rect(x, y, width, height, "F");
+              doc.setFontSize(8);
+              doc.setFont("helvetica", "bold");
+              doc.text(
+                val.toString(),
+                data.cell.x + data.cell.width / 2,
+                data.cell.y + data.cell.height / 2 + 1.2,
+                { align: "center" },
+              );
+            }
+          }
         }
       },
     });
 
-    const finalY = (doc as any).lastAutoTable?.finalY ?? 250;
-    doc.setFontSize(8);
-    doc.setTextColor(100, 100, 100);
-    doc.text(
-      `Dicetak: ${todayId} - Haluan Daya Niaga`,
-      pageWidth / 2,
-      finalY + 10,
-      { align: "center" },
-    );
-
     const safePt = (customerPt || "REPORT").replace(/\s+/g, "_");
-    const safeDate = todayId.replace(/\//g, "-");
+    const safeDate = format(new Date(), "dd-MM-yyyy");
     doc.save(`SOA_${safePt}_${safeDate}.pdf`);
   };
 
@@ -458,6 +631,8 @@ export default function SoaSatuanPage() {
           bucket61Plus,
           paymentDate: item.lunasDate ? formatDate(item.lunasDate) : null,
           agingStatus,
+          rawInvDate: item.tanggal,
+          rawDueDate: dueDate.toISOString(),
         };
       });
 
@@ -605,7 +780,7 @@ export default function SoaSatuanPage() {
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="space-y-1">
+          <div className="space-y-1 text-center sm:text-left flex-1">
             <h1 className="text-3xl font-bold tracking-tight mt-8">
               SOA Satuan
             </h1>
@@ -613,7 +788,7 @@ export default function SoaSatuanPage() {
               Statement of Account dengan analisis aging 0-30, 31-60, 61+ days.
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 justify-center sm:justify-end">
             <Button variant="outline" size="sm" asChild>
               <Link href="/dashboard">← Dashboard</Link>
             </Button>
@@ -676,7 +851,11 @@ export default function SoaSatuanPage() {
                     selectedPt && selectedPt !== "all"
                       ? selectedPt
                       : "Semua_PT";
-                  generatePdfReport(filteredData, customerPt);
+                  // Make sure to show loading state if it takes time
+                  setIsDownloadingPdf(true);
+                  generatePdfReport(filteredData, customerPt).finally(() => {
+                    setIsDownloadingPdf(false);
+                  });
                 }}
                 disabled={isDownloadingPdf || !filteredData.length}
               >

@@ -76,7 +76,7 @@ export default function ProfitPage() {
   const [filterNoQuo, setFilterNoQuo] = React.useState("all");
   const [showBansos, setShowBansos] = React.useState(false);
   const [savingBansos, setSavingBansos] = React.useState(false);
-  const [syncingBansos, setSyncingBansos] = React.useState(false);
+  // const [syncingBansos, setSyncingBansos] = React.useState(false);
 
   const fetchPenawarans = async () => {
     try {
@@ -253,12 +253,12 @@ export default function ProfitPage() {
       0,
     );
 
-    // AKTUAL: Use TOTAL QUOTATION MUST BE PAID (IDR) from QUO calculation.
-    // Formula used in dashboard/report: (subTotal - discount) * 1.11
-    const quoDiscount = reportQuoData?.discount || 0;
-    const aktual = (subTotal - quoDiscount) * 1.11;
+    // AKTUAL: ambil langsung dari "Total after discount" di page report/inv
+    // (disimpan di reportInv.totalAfterDiscount)
+    const aktual = Number(reportInvData?.totalAfterDiscount || 0);
 
-    // Estimasi PPN tetap memakai (subTotal - discount)
+    // Estimasi PPN tetap memakai (subTotal - discount) dari report-quo
+    const quoDiscount = reportQuoData?.discount || 0;
     const estimasiPpn = subTotal - quoDiscount;
 
     return { aktual, estimasiPpn };
@@ -488,32 +488,72 @@ export default function ProfitPage() {
               <Button
                 size="sm"
                 variant="secondary"
-                disabled={syncingBansos || filterNoQuo === "all"}
+                disabled={savingBansos || filterNoQuo === "all"}
                 onClick={async () => {
+                  if (filterNoQuo === "all") return;
+                  const selectedPenawaran = penawarans.find(
+                    (p) => p.id === filterNoQuo,
+                  );
+                  const noQuo = selectedPenawaran?.noQuo;
+                  if (!noQuo) return;
+
                   try {
-                    if (filterNoQuo === "all") return;
-                    setSyncingBansos(true);
-                    // Sync bansos dari ReportQuo -> Penjualan
-                    // (biar halaman /penjualan langsung mengikuti checkbox)
-                    const res = await fetch(
-                      "/api/penjualan-sync-bansos-from-profit",
-                      { method: "POST" },
-                    );
-                    const payload = await res.json();
-                    console.log("sync bansos payload", payload);
+                    setSavingBansos(true);
+
+                    // 1) Simpan pilihan ke ReportQuo (bansosUsed)
+                    const res = await fetch("/api/report-quo-bansos", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        noQuo,
+                        useBansos: showBansos,
+                      }),
+                    });
+                    const payload = await res.json().catch(() => ({}));
                     if (!res.ok) {
-                      throw new Error(payload?.error || "sync failed");
+                      throw new Error(payload?.error || "save failed");
                     }
-                    // After sync, reload page data for current filter to reflect updated DB
-                    // Penjualan page fetches on its own; Profit page just updates checkbox state.
+
+                    // 2) Snapshot ke tabel Profit (isi kolom finansial)
+                    const snapRes = await fetch("/api/profit-snapshot", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        noQuo,
+                        useBansos: showBansos,
+                      }),
+                    });
+                    const snapPayload = await snapRes.json().catch(() => ({}));
+                    if (!snapRes.ok) {
+                      throw new Error(
+                        snapPayload?.error || "snapshot profit failed",
+                      );
+                    }
+
+                    // 3) Sync ke Penjualan.bansos sesuai bansosUsed
+                    const syncRes = await fetch(
+                      "/api/penjualan-sync-bansos-from-profit",
+                      {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ noQuo }),
+                      },
+                    );
+
+                    const syncPayload = await syncRes.json().catch(() => ({}));
+                    if (!syncRes.ok) {
+                      throw new Error(
+                        syncPayload?.error || "sync bansos failed",
+                      );
+                    }
                   } catch (e) {
-                    console.error("sync bansos failed", e);
+                    console.error("Failed saving/sync bansos", e);
                   } finally {
-                    setSyncingBansos(false);
+                    setSavingBansos(false);
                   }
                 }}
               >
-                {syncingBansos ? "Sync..." : "Sync Bansos"}
+                {savingBansos ? "Saving..." : "Save"}
               </Button>
               <Checkbox
                 id="show-bansos"
@@ -521,41 +561,6 @@ export default function ProfitPage() {
                 onCheckedChange={(checked) => {
                   const next = !!checked;
                   setShowBansos(next);
-                  // Fire-and-forget: save to DB for selected No. Quo
-                  (async () => {
-                    if (filterNoQuo === "all") return;
-                    if (!penawarans?.length) return;
-                    const selectedPenawaran = penawarans.find(
-                      (p) => p.id === filterNoQuo,
-                    );
-                    if (!selectedPenawaran?.noQuo) return;
-
-                    try {
-                      setSavingBansos(true);
-                      const res = await fetch("/api/report-quo-bansos", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          noQuo: selectedPenawaran.noQuo,
-                          useBansos: next,
-                        }),
-                      });
-                      const payload = await res.json();
-                      console.log("save bansosUsed response", {
-                        noQuo: selectedPenawaran.noQuo,
-                        useBansos: next,
-                        ok: res.ok,
-                        payload,
-                      });
-                      if (!res.ok) {
-                        throw new Error(payload?.error || "save failed");
-                      }
-                    } catch (e) {
-                      console.error("Failed saving bansosUsed", e);
-                    } finally {
-                      setSavingBansos(false);
-                    }
-                  })();
                 }}
               />
               <Label

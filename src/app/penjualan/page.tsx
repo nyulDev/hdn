@@ -59,9 +59,19 @@ export default function PenjualanPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
+
+      // Pastikan bansos sudah tersync ke tabel penjualan sebelum fetch data
+      // Mode all: update bansos untuk semua record
+      await fetch("/api/penjualan-sync-bansos-from-profit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ noQuo: "0002-PH" }),
+      }).catch(() => null);
+
       const params = search ? new URLSearchParams({ search }) : "";
       const url = `/api/penjualan${params ? `?${params}` : ""}`;
       const response = await fetch(url);
+
       if (!response.ok) throw new Error("Fetch failed");
       const json = await response.json();
       setData(Array.isArray(json) ? json : []);
@@ -84,6 +94,18 @@ export default function PenjualanPage() {
 
   React.useEffect(() => {
     fetchData();
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchData();
+      }
+    };
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+     
   }, []);
 
   const filteredData = data.filter(
@@ -189,10 +211,12 @@ export default function PenjualanPage() {
                       item.totalAfterDiscount - item.pembelianAktual;
                     const marketingFee = grossProfit * 0.1;
                     const bagiHasilHSI = item.pengajuanModal * 0.08;
-                    const bansos =
-                      typeof item.bansosValue === "number"
-                        ? item.bansosValue
-                        : item.totalAfterDiscount * 0.05;
+
+                    // BANSOS mengikuti state di Profit page:
+                    // - jika checklist Bansos tidak aktif => bansos = 0
+                    // - jika checklist aktif => ambil nilai bansosValue (hasil sync dari DB)
+                    const bansos = Number(item.bansosValue ?? 0);
+
                     const netProfit =
                       grossProfit - (marketingFee + bagiHasilHSI + bansos);
 

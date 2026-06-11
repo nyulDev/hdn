@@ -12,6 +12,7 @@ import {
   FileBarChart,
   Users,
   Truck,
+  UserCog,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -209,6 +210,14 @@ export function AppSidebar() {
 
       <SidebarFooter>
         <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild isActive={pathname === "/user-management"}>
+              <Link href="/user-management">
+                <UserCog />
+                <span>User Management</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
               <Link href="#">

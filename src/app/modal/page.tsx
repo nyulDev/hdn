@@ -93,6 +93,7 @@ export default function ModalPage() {
   const [otherCostServiceBoat, setOtherCostServiceBoat] = React.useState("");
   const [otherCostLainLain, setOtherCostLainLain] = React.useState("");
   const [hsi, setHsi] = React.useState("");
+  const [includeHsi2Bulan, setIncludeHsi2Bulan] = React.useState(true);
 
   // Defaults for multipliers
   const [defaultCosts, setDefaultCosts] = React.useState<any>({
@@ -262,9 +263,10 @@ export default function ModalPage() {
 
       if (modalSum > 0) {
         setTotalModalSperpart(modalSum.toFixed(2));
+        // ensure totalModalSperpart is not overwritten by spread
         setSavedCostValues({
-          totalModalSperpart: modalSum,
           ...defaultCostObject(),
+          totalModalSperpart: modalSum,
         });
       } else {
         resetCostFields();
@@ -347,7 +349,8 @@ export default function ModalPage() {
         savedCostValues.feeKurir +
         savedCostValues.otherCostTruck +
         savedCostValues.otherCostServiceBoat +
-        savedCostValues.otherCostLainLain
+        savedCostValues.otherCostLainLain +
+        calculateTotalHsi2BulanAddon() // tambahan 0.8% hanya saat checked
       );
     }
 
@@ -369,14 +372,48 @@ export default function ModalPage() {
       calculatedCosts.feeKurir +
       calculatedCosts.otherCostTruck +
       calculatedCosts.otherCostServiceBoat +
-      calculatedCosts.otherCostLainLain
+      calculatedCosts.otherCostLainLain +
+      calculateTotalHsi2BulanAddon() // tambahan 0.8% hanya saat checked
     );
   };
 
+  // HSI-2 Bulan (sesuai permintaan):
+  // Jika ter-checklist:
+  //   HSI-2 = (Total Sperpart + Bank Charge + Packing Cost + Duty Tax + Local Cost +
+  //           AIR DHL + AIR Door to Door + SEA Resmi + SEA Door to Door + Fee Kurir +
+  //           Truck + Service Boat + Lain-lain - Discount) × 0.8%
+  // Jika tidak ter-checklist: 0
+  const calculateTotalHsi2BulanAddon = (): number => {
+    if (!includeHsi2Bulan) return 0;
+
+    const totalModal = parseFloat(totalModalSperpart) || 0;
+    const discountValue = parseFloat(discount) || 0;
+
+    const calculatedCosts = getCalculatedCosts();
+
+    const base =
+      totalModal +
+      calculatedCosts.bankCharge +
+      calculatedCosts.packingCost +
+      calculatedCosts.deliveryDutyTax +
+      calculatedCosts.deliveryLocalCost +
+      calculatedCosts.deliveryAirDHL +
+      calculatedCosts.deliveryAirDoorToDoor +
+      calculatedCosts.deliverySeaResmi +
+      calculatedCosts.deliverySeaDoorToDoor +
+      calculatedCosts.feeKurir +
+      calculatedCosts.otherCostTruck +
+      calculatedCosts.otherCostServiceBoat +
+      calculatedCosts.otherCostLainLain -
+      discountValue;
+
+    const addonPercent = 0.08;
+    return base * addonPercent;
+  };
+
+  // HSI-2 Bulan nilai yang ditampilkan harus ikut skema checklist
   const calculateTotalHsi = (): number => {
-    const subTotal = calculateSubTotal();
-    const hsiPercent = defaultCosts.hsi || 0;
-    return subTotal * (hsiPercent / 100);
+    return calculateTotalHsi2BulanAddon();
   };
 
   React.useEffect(() => {
@@ -660,8 +697,14 @@ export default function ModalPage() {
         return;
       }
 
+      await Promise.all([fetchModals(), fetchModalCosts(), fetchPenawarans()]);
+
+      // Jika detail modal sedang terbuka untuk noPenawaran ini, paksa reload supaya tampilan disc ikut berubah
+      if (showDetailModal && detailNoPenawaran?.noPenawaran === noPenawaran) {
+        await refreshDetailData(1);
+      }
+
       resetForm();
-      await fetchModals();
       alert("Data berhasil disimpan!");
     } catch (error) {
       console.error("Error saving modal:", error);
@@ -725,6 +768,8 @@ export default function ModalPage() {
       let hasCost = false;
       let totalCost = 0;
 
+      let hsiValue = 0;
+
       if (existingCost) {
         hasCost = true;
         const costFields = [
@@ -742,7 +787,19 @@ export default function ModalPage() {
           existingCost.otherCostLainLain,
         ];
         totalCost = safeSum(costFields);
+
+        // Field HSI sesuai permintaan:
+        // HSI = Total Sperpart + Total Cost × 8%
+        // (dibulatkan sesuai formatting tabel)
+        if (includeHsi2Bulan) {
+          const totalSperpart =
+            parseFloat(existingCost.totalModalSperpart as any) || 0;
+          hsiValue = (totalSperpart + totalCost) * 0.08;
+        }
       }
+
+       
+      group.hsi = hsiValue;
 
       const itemSubTotal = group.items.reduce(
         (sum: number, item: any) => sum + (parseFloat(item.amount) || 0),
@@ -753,10 +810,10 @@ export default function ModalPage() {
       group.totalCost = totalCost;
       group.itemSubTotal = itemSubTotal;
 
+      // Rumus Total Keseluruhan sesuai permintaan:
+      // Total Keseluruhan = Total Sperpart + Total Cost + HSI
       group.totalKeseluruhan =
-        (itemSubTotal + (hasCost ? totalCost : 0)) * 0.08 +
-        itemSubTotal +
-        (hasCost ? totalCost : 0);
+        itemSubTotal + (hasCost ? totalCost : 0) + (hasCost ? hsiValue : 0);
     });
 
     return result;
@@ -1198,9 +1255,18 @@ export default function ModalPage() {
                 />
               </div>
               <div className="grid gap-1">
-                <Label htmlFor="hsi">
-                  HSI - 2 Bulan ({defaultCosts.hsi || 0}%)
-                </Label>
+                <div className="flex items-center gap-2">
+                  <input
+                    id="includeHsi2Bulan"
+                    type="checkbox"
+                    checked={includeHsi2Bulan}
+                    onChange={(e) => setIncludeHsi2Bulan(e.target.checked)}
+                    className="h-4 w-4"
+                  />
+                  <Label htmlFor="includeHsi2Bulan" className="m-0">
+                    HSI - 2 Bulan (checkbox)
+                  </Label>
+                </div>
                 <Input
                   id="hsi"
                   type="number"
@@ -1209,7 +1275,15 @@ export default function ModalPage() {
                   value={hsi}
                   readOnly
                   className="bg-muted cursor-not-allowed"
+                  title="Nilai HSI tersimpan mengikuti rumus existing; tambahan 0.8% dihitung ke Total Cost via checkbox"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Tambahan Total Cost:{" "}
+                  <span className="font-medium">
+                    {includeHsi2Bulan ? "ON" : "OFF"}
+                  </span>{" "}
+                  (= Total Sperpart × 0.8%)
+                </p>
               </div>
             </div>
 
@@ -1349,7 +1423,9 @@ export default function ModalPage() {
                   <TableHead>Kapal</TableHead>
                   <TableHead>Total Sperpart</TableHead>
                   <TableHead>Total Cost</TableHead>
+                  <TableHead>HSI</TableHead>
                   <TableHead>Total Keseluruhan</TableHead>
+
                   <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
@@ -1392,12 +1468,19 @@ export default function ModalPage() {
                         </span>
                       )}
                     </TableCell>
+                    <TableCell className="font-medium">
+                      {Number(group.hsi || 0).toLocaleString("id-ID", {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      })}
+                    </TableCell>
                     <TableCell className="font-bold">
                       {group.totalKeseluruhan.toLocaleString("id-ID", {
                         minimumFractionDigits: 0,
                         maximumFractionDigits: 0,
                       })}
                     </TableCell>
+
                     <TableCell className="text-right">
                       <div className="flex gap-2 justify-end">
                         <Button

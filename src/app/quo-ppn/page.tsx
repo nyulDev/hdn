@@ -356,29 +356,95 @@ export default function QuoPpnPage() {
     // Find the penawaran that matches this quoPpn
     const selectedPenawaran = penawarans.find((p) => p.noQuo === quoPpn.noQuo);
 
+    // Try to resolve modalAktualId from description (so dropdown matches)
+    // NOTE: This page stores unitPrice/total lama by modalAktual selection,
+    // but when editing we want values to be visible even without re-selecting.
+    const resolvedModalAktual = Array.isArray(modalsAktual)
+      ? modalsAktual.find(
+          (m) =>
+            m.noQuo === (quoPpn.noQuo || "") &&
+            (m.description === (quoPpn.description || "") ||
+              // fallback match by pn + kodeImpa when description differs
+              (m.pn === (quoPpn.pn || "") &&
+                (m.kodeImpa || "") === (quoPpn.kodeImpa || ""))),
+        )
+      : undefined;
+
+    const resolvedModalId = resolvedModalAktual?.id || "";
+
+    const resolvedQtyStr = quoPpn.qty?.toString() || "";
+    const resolvedSatuanStr = quoPpn.satuan || "";
+    const resolvedUnitPriceNewStr = quoPpn.unitPriceNew?.toString() || "";
+    const resolvedTotalNewStr = quoPpn.totalNew?.toString() || "";
+
+    // Fill lama fields from modalAktual if available; otherwise compute from qty & unitPrice/nilaiAktual
+    const lamaUnitPrice =
+      resolvedModalAktual?.nilaiAktual ??
+      resolvedModalAktual?.unitPrice ??
+      quoPpn.unitPriceNew ??
+      null;
+
+    const lamaQty = quoPpn.qty ?? resolvedModalAktual?.qty ?? 0;
+    const lamaUnitPriceNum = lamaUnitPrice !== null ? Number(lamaUnitPrice) : 0;
+    const lamaTotalNum =
+      (Number(lamaQty) || 0) * (Number(lamaUnitPriceNum) || 0);
+
     setDialogMode("edit");
     setDialogEditId(quoPpn.id);
     setDialogPenawaranId(selectedPenawaran?.id || "");
     setDialogNoQuo(quoPpn.noQuo || "");
     setDialogPn(quoPpn.pn || "");
     setDialogDescription(quoPpn.description || "");
-    setDialogSelectedModalId("");
-    setDialogQty(quoPpn.qty?.toString() || "");
-    setDialogSatuan(quoPpn.satuan || "");
-    setDialogKodeImpa(quoPpn.kodeImpa || "");
-    setDialogUnitPrice("");
-    setDialogTotal("");
-    setDialogUnitPriceNew(quoPpn.unitPriceNew?.toString() || "");
 
-    setDialogTotalNew(quoPpn.totalNew?.toString() || "");
+    // set dropdown value so it renders correctly
+    setDialogSelectedModalId(resolvedModalId);
+
+    setDialogQty(resolvedQtyStr);
+    setDialogSatuan(resolvedSatuanStr);
+    setDialogKodeImpa(quoPpn.kodeImpa || "");
+
+    setDialogUnitPrice(
+      lamaUnitPriceNum && Number.isFinite(lamaUnitPriceNum)
+        ? lamaUnitPriceNum.toString()
+        : "",
+    );
+    setDialogTotal(
+      lamaTotalNum && Number.isFinite(lamaTotalNum)
+        ? lamaTotalNum.toString()
+        : "",
+    );
+
+    setDialogUnitPriceNew(resolvedUnitPriceNewStr);
+    setDialogTotalNew(resolvedTotalNewStr);
+
     setDialogTanggal(
       quoPpn.tanggal
         ? new Date(quoPpn.tanggal).toISOString().split("T")[0]
         : "",
     );
+
+    // Tidak ada field range yang disimpan di record QUO PPN,
+    // jadi kita biarkan kosong saat edit.
     setDialogRange1("");
     setDialogRange2("");
     setDialogRange3("");
+
+    // Pastikan total lama baru sesuai dengan state qty/lama unit price
+    // (menghindari edge case ketika user langsung melihat tanpa re-select description)
+    const qtyNum =
+      parseFloat(lamaQty?.toString?.() ? String(lamaQty) : String(lamaQty)) ||
+      0;
+    const unitPriceNum =
+      parseFloat(
+        lamaUnitPriceNum && Number.isFinite(lamaUnitPriceNum)
+          ? lamaUnitPriceNum.toString()
+          : "0",
+      ) || 0;
+    const totalCalc = qtyNum * unitPriceNum;
+    if (Number.isFinite(totalCalc)) {
+      setDialogTotal(totalCalc.toString());
+    }
+
     setDialogOpen(true);
   };
 
@@ -550,7 +616,7 @@ export default function QuoPpnPage() {
 
       {/* Add/Edit QUO PPN Dialog */}
       <Dialog open={dialogOpen} onOpenChange={handleDialogClose}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[900px] w-[95vw] max-w-[95vw]">
           <DialogHeader>
             <DialogTitle>
               {dialogMode === "edit" ? "Edit QUO PPN" : "Tambah QUO PPN"}
