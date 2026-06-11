@@ -50,9 +50,14 @@ export async function DELETE(
 ) {
   try {
     const { id } = await paramsPromise;
-    await prisma.customer.delete({
-      where: { id },
-    });
+    await prisma.$transaction([
+      prisma.penjualan.deleteMany({
+        where: { customerId: id }
+      }),
+      prisma.customer.delete({
+        where: { id },
+      })
+    ]);
 
     return NextResponse.json({ success: true });
   } catch (error) {
