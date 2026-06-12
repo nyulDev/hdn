@@ -44,7 +44,9 @@ export async function POST(request: Request) {
     const {
       noPenawaran,
       atsn,
+      noPo,
       discount,
+
       location,
       pn,
       kapal,

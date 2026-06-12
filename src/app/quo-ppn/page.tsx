@@ -181,17 +181,21 @@ export default function QuoPpnPage() {
 
   const handleDialogDescriptionChange = (value: string) => {
     setDialogSelectedModalId(value);
-    const modalsAktualSafe = Array.isArray(modalsAktual) ? modalsAktual : [];
-    // Find the modal by ID from modalsAktual
-    const modal = modalsAktualSafe.find((m) => m.id === value);
+
+    const modalsSafe = Array.isArray(modals) ? modals : [];
+    // Find the modal by ID from regular modals (NOT modal-aktual)
+    const modal = modalsSafe.find((m) => m.id === value);
     if (modal) {
-      setDialogDescription(modal.description); // Store the actual description text
+      setDialogDescription(modal.description);
       setDialogPn(modal.pn || "");
       setDialogQty(modal.qty?.toString() || "");
       setDialogSatuan(modal.satuan || "");
       setDialogKodeImpa(modal.kodeImpa || "");
-      const unitPriceValue = modal.nilaiAktual ?? modal.unitPrice;
+
+      // Regular modal stores unitPrice (and qty), no nilaiAktual
+      const unitPriceValue = modal.unitPrice;
       setDialogUnitPrice(unitPriceValue?.toString() || "");
+
       const total =
         (parseFloat(modal.qty) || 0) * (parseFloat(unitPriceValue) || 0);
       setDialogTotal(total.toString());
@@ -359,8 +363,8 @@ export default function QuoPpnPage() {
     // Try to resolve modalAktualId from description (so dropdown matches)
     // NOTE: This page stores unitPrice/total lama by modalAktual selection,
     // but when editing we want values to be visible even without re-selecting.
-    const resolvedModalAktual = Array.isArray(modalsAktual)
-      ? modalsAktual.find(
+    const resolvedModal = Array.isArray(modals)
+      ? modals.find(
           (m) =>
             m.noQuo === (quoPpn.noQuo || "") &&
             (m.description === (quoPpn.description || "") ||
@@ -370,21 +374,18 @@ export default function QuoPpnPage() {
         )
       : undefined;
 
-    const resolvedModalId = resolvedModalAktual?.id || "";
+    const resolvedModalId = resolvedModal?.id || "";
 
     const resolvedQtyStr = quoPpn.qty?.toString() || "";
     const resolvedSatuanStr = quoPpn.satuan || "";
     const resolvedUnitPriceNewStr = quoPpn.unitPriceNew?.toString() || "";
     const resolvedTotalNewStr = quoPpn.totalNew?.toString() || "";
 
-    // Fill lama fields from modalAktual if available; otherwise compute from qty & unitPrice/nilaiAktual
+    // Fill lama fields from modal (regular) if available; otherwise compute from qty & unitPrice
     const lamaUnitPrice =
-      resolvedModalAktual?.nilaiAktual ??
-      resolvedModalAktual?.unitPrice ??
-      quoPpn.unitPriceNew ??
-      null;
+      resolvedModal?.unitPrice ?? quoPpn.unitPriceNew ?? null;
 
-    const lamaQty = quoPpn.qty ?? resolvedModalAktual?.qty ?? 0;
+    const lamaQty = quoPpn.qty ?? resolvedModal?.qty ?? 0;
     const lamaUnitPriceNum = lamaUnitPrice !== null ? Number(lamaUnitPrice) : 0;
     const lamaTotalNum =
       (Number(lamaQty) || 0) * (Number(lamaUnitPriceNum) || 0);
@@ -661,7 +662,7 @@ export default function QuoPpnPage() {
                     <SelectValue placeholder="Pilih Description" />
                   </SelectTrigger>
                   <SelectContent>
-                    {modalsAktual
+                    {modals
                       .filter((m) => m.noQuo === dialogNoQuo)
                       .map((modal) => (
                         <SelectItem key={modal.id} value={modal.id}>

@@ -205,6 +205,7 @@ model ReportInv {
   id                 String   @id @default(cuid())
   noPenawaran        String   @unique
   atsn               String?
+  noPo               String?
   discount           Float?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
@@ -221,6 +222,7 @@ model ReportInv {
   customerId         String?
   pt                 String?
 }
+
 
 model Profit {
   id                  String   @id @default(cuid())

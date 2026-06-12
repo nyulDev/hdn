@@ -54,7 +54,9 @@ export default function INVPage() {
   // State for filter
   const [filterNoRfs, setFilterNoRfs] = React.useState("");
   const [atsn, setAtsn] = React.useState("");
+  const [noPo, setNoPo] = React.useState("");
   const [savedPn, setSavedPn] = React.useState("");
+
   const [savedKapal, setSavedKapal] = React.useState("");
   const [savedNamaMesin, setSavedNamaMesin] = React.useState("");
   const [savedLocation, setSavedLocation] = React.useState("");
@@ -112,9 +114,11 @@ export default function INVPage() {
           const data = await response.json();
           if (data) {
             setAtsn(data.atsn || "");
+            setNoPo(data.noPo || "");
             setDiscount(data.discount || 0);
             setSavedPn(data.pn || "");
             setSavedKapal(data.kapal || "");
+
             setSavedNamaMesin(data.namaMesin || "");
             setSavedLocation(data.location || "");
             setSavedSubtotal(data.subtotal || 0);
@@ -332,6 +336,10 @@ export default function INVPage() {
 
   // Get current date for invoice
   const today = new Date();
+  const currentInvoiceYear = today.getFullYear();
+
+  const formattedNoINV =
+    noINV !== "-" ? `${noINV}-INV-${currentInvoiceYear}` : "-";
 
   // Format date for display (DD MMM YYYY format like "14 Mar 2025")
   const formatDate = (date: Date) => {
@@ -400,6 +408,7 @@ export default function INVPage() {
         body: JSON.stringify({
           noPenawaran: filterNoRfs,
           atsn,
+          noPo,
           discount,
           location: currentLocation,
           pn: pnValues,
@@ -574,7 +583,7 @@ export default function INVPage() {
             </button>
           </div>
 
-          {/* Atsn and Discount Input Fields */}
+          {/* Atsn, No. PO and Discount Input Fields */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mt-4 pt-4 border-t border-gray-200">
             <label
               htmlFor="atsn"
@@ -588,6 +597,23 @@ export default function INVPage() {
               value={atsn}
               onChange={(e) => setAtsn(e.target.value)}
               placeholder="Contoh: Bpk. Yohanes Dhani / Pak Desfandra"
+              className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mt-4 pt-4 border-t border-gray-200">
+            <label
+              htmlFor="noPo"
+              className="text-sm font-semibold whitespace-nowrap"
+            >
+              NO. PO :
+            </label>
+            <input
+              id="noPo"
+              type="text"
+              value={noPo}
+              onChange={(e) => setNoPo(e.target.value)}
+              placeholder="Masukkan No. PO"
               className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
 
@@ -745,6 +771,7 @@ export default function INVPage() {
             <p>Jl. Jend. Sudirman Kav. 52-53, Jak-Sel 12190</p>
             <p>Ph./Fax. 021-21275897-7538093 ; HP-WA: 0811-821723</p>
             <p> Email : sales@haluan.id / haluan.group@yahoo.co.id </p>
+            <p> Website : https://haluan-group.net </p>
           </div>
           <div>
             <p className="font-semibold ml-50">Workshop:</p>
@@ -782,8 +809,14 @@ export default function INVPage() {
           <div className="text-xs flex flex-col gap-1 w-64">
             <div className="flex justify-between">
               <span className="font-bold w-32">NO</span>
-              <span className="w-32">: {noINV}</span>
+              <span className="w-32">: {formattedNoINV}</span>
             </div>
+
+            <div className="flex justify-between">
+              <span className="font-bold w-32">NO. PO</span>
+              <span className="w-32">: {noPo || "-"}</span>
+            </div>
+
             <div className="flex justify-between">
               <span className="font-bold w-32">CUSTOMER ID</span>
               <span className="w-32">
