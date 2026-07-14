@@ -210,14 +210,14 @@ export function AppSidebar() {
 
       <SidebarFooter>
         <SidebarMenu>
-          <SidebarMenuItem>
+          {/* <SidebarMenuItem>
             <SidebarMenuButton asChild isActive={pathname === "/user-management"}>
               <Link href="/user-management">
                 <UserCog />
                 <span>User Management</span>
               </Link>
             </SidebarMenuButton>
-          </SidebarMenuItem>
+          </SidebarMenuItem> */}
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
               <Link href="#">

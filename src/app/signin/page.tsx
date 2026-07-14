@@ -80,7 +80,7 @@ export default function SignInPage() {
     "admin3@haluan.id": "admin3",
     "admin4@haluan.id": "admin4",
     "admin5@haluan.id": "admin5",
-    "nyulmac93@gmail.com": "Salahsatu93@",
+    "nyulmac93@gmail.com": "Passwordapa",
     "adminhdn@gmail.com": "zxcvbnm",
   };
 
