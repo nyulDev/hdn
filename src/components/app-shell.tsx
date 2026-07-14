@@ -29,7 +29,9 @@ interface AppShellProps {
 export function AppShell({ children }: AppShellProps) {
   const router = useRouter();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    const { logout } = await import('@/app/auth/actions');
+    await logout();
     router.push("/signin");
   };
 

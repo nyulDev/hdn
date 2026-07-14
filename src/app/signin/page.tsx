@@ -74,36 +74,22 @@ export default function SignInPage() {
   const [isSuccess, setIsSuccess] = React.useState(false);
   const [error, setError] = React.useState("");
 
-  const admins = {
-    "admin1@haluan.id": "admin1",
-    "admin2@haluan.id": "admin2",
-    "admin3@haluan.id": "admin3",
-    "admin4@haluan.id": "admin4",
-    "admin5@haluan.id": "admin5",
-    "nyulmac93@gmail.com": "Passwordapa",
-    "adminhdn@gmail.com": "zxcvbnm",
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
 
-    // Simulate authentication
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    const { loginWithCookie } = await import('@/app/auth/actions');
+    const result = await loginWithCookie(email, password);
 
-    // Validate credentials - trim whitespace and check
-    const trimmedEmail = email.trim().toLowerCase();
-    const trimmedPassword = password.trim();
-
-    if (admins[trimmedEmail] === trimmedPassword) {
+    if (result.success) {
       setIsSuccess(true);
       // Wait for animation to play
       setTimeout(() => {
         router.push("/dashboard");
       }, 2500);
     } else {
-      setError("Email atau password tidak valid. Silakan coba lagi.");
+      setError(result.error || "Email, password salah, atau user tidak aktif.");
       setIsLoading(false);
     }
   };

@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -36,19 +35,131 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Edit2, Trash2 } from "lucide-react";
+import { Plus, Search, Edit2, Trash2, Loader2, ShieldOff } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
-
-// Dummy data for UI showcase
-const DUMMY_USERS = [
-  { id: 1, name: "Admin Utama", email: "admin@haluan.id", role: "Super Admin", status: "Active" },
-  { id: 2, name: "Budi Santoso", email: "budi@haluan.id", role: "Admin", status: "Active" },
-  { id: 3, name: "Siti Aminah", email: "siti@haluan.id", role: "Sales", status: "Inactive" },
-  { id: 4, name: "Joko Anwar", email: "joko@haluan.id", role: "Finance", status: "Active" },
-];
+import { addUser, getUsers, updateUser, deleteUser } from "./actions";
+import { useCurrentUser } from "@/hooks/use-current-user";
+import { useRouter } from "next/navigation";
 
 export default function UserManagementPage() {
+  const { isSuperAdmin, isLoading: isAuthLoading } = useCurrentUser();
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const [users, setUsers] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+
+  // Form states
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState("admin");
+  const [status, setStatus] = useState("active");
+
+  const fetchUsers = async () => {
+    setIsLoading(true);
+    const result = await getUsers();
+    if (result.success && result.data) {
+      setUsers(result.data);
+    }
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    if (!isAuthLoading && isSuperAdmin) {
+      fetchUsers();
+    }
+  }, [isAuthLoading, isSuperAdmin]);
+
+  // Tampilkan loading saat mengecek auth
+  if (isAuthLoading) {
+    return (
+      <AppShell>
+        <div className="flex h-full items-center justify-center p-10">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </AppShell>
+    );
+  }
+
+  // Guard: hanya super_admin yang bisa akses
+  if (!isSuperAdmin) {
+    return (
+      <AppShell>
+        <div className="flex h-full flex-col items-center justify-center gap-4 p-10 text-center">
+          <ShieldOff className="h-16 w-16 text-muted-foreground" />
+          <h1 className="text-2xl font-bold">Akses Ditolak</h1>
+          <p className="text-muted-foreground max-w-sm">
+            Anda tidak memiliki izin untuk mengakses halaman ini. Halaman User
+            Management hanya dapat diakses oleh <strong>Super Admin</strong>.
+          </p>
+          <Button onClick={() => router.push("/dashboard")}>
+            Kembali ke Dashboard
+          </Button>
+        </div>
+      </AppShell>
+    );
+  }
+
+  const resetForm = () => {
+    setEditId(null);
+    setName("");
+    setEmail("");
+    setPassword("");
+    setRole("admin");
+    setStatus("active");
+  };
+
+  const handleOpenNewUser = () => {
+    resetForm();
+    setIsOpen(true);
+  };
+
+  const handleEditUser = (user: any) => {
+    setEditId(user.id);
+    setName(user.name || "");
+    setEmail(user.email || "");
+    setPassword(""); // Kosongkan password agar tidak terlihat, hanya diisi jika ingin diubah
+    setRole(user.role || "admin");
+    setStatus(user.status || "active");
+    setIsOpen(true);
+  };
+
+  const handleDeleteUser = async (id: string) => {
+    if (window.confirm("Apakah Anda yakin ingin menghapus user ini?")) {
+      const result = await deleteUser(id);
+      if (result.success) {
+        fetchUsers();
+      } else {
+        alert("Gagal menghapus user: " + result.error);
+      }
+    }
+  };
+
+  const handleSaveUser = async () => {
+    if (!name || !email || (!editId && !password)) {
+      alert("Nama, Email, dan Password wajib diisi!");
+      return;
+    }
+    
+    setIsSaving(true);
+    const data = { name, email, password, role, status };
+    
+    const result = editId 
+      ? await updateUser(editId, data) 
+      : await addUser(data);
+      
+    setIsSaving(false);
+
+    if (result.success) {
+      setIsOpen(false);
+      resetForm();
+      fetchUsers();
+    } else {
+      alert("Gagal menyimpan user: " + result.error);
+    }
+  };
 
   return (
     <AppShell>
@@ -61,17 +172,22 @@ export default function UserManagementPage() {
             </p>
           </div>
           
-          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+          <Dialog open={isOpen} onOpenChange={(open) => {
+            if(!open) resetForm();
+            setIsOpen(open);
+          }}>
             <DialogTrigger asChild>
-              <Button>
+              <Button onClick={handleOpenNewUser}>
                 <Plus className="mr-2 h-4 w-4" /> Tambah User
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
-                <DialogTitle>Tambah User Baru</DialogTitle>
+                <DialogTitle>{editId ? "Edit User" : "Tambah User Baru"}</DialogTitle>
                 <DialogDescription>
-                  Masukkan detail informasi pengguna di bawah ini. (Saat ini hanya UI, belum ada proses simpan).
+                  {editId 
+                    ? "Perbarui detail informasi pengguna. Kosongkan password jika tidak ingin mengubahnya." 
+                    : "Masukkan detail informasi pengguna di bawah ini untuk membuat akses Sign In baru."}
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
@@ -79,26 +195,46 @@ export default function UserManagementPage() {
                   <Label htmlFor="name" className="text-right">
                     Nama
                   </Label>
-                  <Input id="name" placeholder="Nama Lengkap" className="col-span-3" />
+                  <Input 
+                    id="name" 
+                    placeholder="Nama Lengkap" 
+                    className="col-span-3" 
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="email" className="text-right">
                     Email
                   </Label>
-                  <Input id="email" type="email" placeholder="email@haluan.id" className="col-span-3" />
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    placeholder="email@haluan.id" 
+                    className="col-span-3"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="password" className="text-right">
                     Password
                   </Label>
-                  <Input id="password" type="password" placeholder="******" className="col-span-3" />
+                  <Input 
+                    id="password" 
+                    type="password" 
+                    placeholder={editId ? "(Kosongkan jika tetap)" : "******"} 
+                    className="col-span-3"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="role" className="text-right">
                     Role
                   </Label>
                   <div className="col-span-3">
-                    <Select>
+                    <Select value={role} onValueChange={setRole}>
                       <SelectTrigger>
                         <SelectValue placeholder="Pilih Peran" />
                       </SelectTrigger>
@@ -116,7 +252,7 @@ export default function UserManagementPage() {
                     Status
                   </Label>
                   <div className="col-span-3">
-                    <Select defaultValue="active">
+                    <Select value={status} onValueChange={setStatus}>
                       <SelectTrigger>
                         <SelectValue placeholder="Pilih Status" />
                       </SelectTrigger>
@@ -129,10 +265,13 @@ export default function UserManagementPage() {
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsOpen(false)}>
+                <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isSaving}>
                   Batal
                 </Button>
-                <Button onClick={() => setIsOpen(false)}>Simpan User</Button>
+                <Button onClick={handleSaveUser} disabled={isSaving}>
+                  {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                  Simpan User
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -166,33 +305,50 @@ export default function UserManagementPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {DUMMY_USERS.map((user, index) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">{index + 1}</TableCell>
-                      <TableCell>{user.name}</TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>{user.role}</TableCell>
-                      <TableCell>
-                        <Badge variant={user.status === "Active" ? "default" : "destructive"}>
-                          {user.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600">
-                          <Edit2 className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                  {isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="h-24 text-center">
+                        <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
                       </TableCell>
                     </TableRow>
-                  ))}
-                  {DUMMY_USERS.length === 0 && (
+                  ) : users.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} className="h-24 text-center">
                         Tidak ada data pengguna.
                       </TableCell>
                     </TableRow>
+                  ) : (
+                    users.map((user, index) => (
+                      <TableRow key={user.id}>
+                        <TableCell className="font-medium">{index + 1}</TableCell>
+                        <TableCell>{user.name || "-"}</TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell className="capitalize">{user.role?.replace("_", " ") || "-"}</TableCell>
+                        <TableCell>
+                          <Badge variant={user.status === "active" ? "default" : "destructive"}>
+                            {user.status === "active" ? "Active" : "Inactive"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-blue-600"
+                            onClick={() => handleEditUser(user)}
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-red-600"
+                            onClick={() => handleDeleteUser(user.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
                   )}
                 </TableBody>
               </Table>
@@ -203,3 +359,4 @@ export default function UserManagementPage() {
     </AppShell>
   );
 }
+
