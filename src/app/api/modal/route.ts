@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     const modals = await prisma.modal.findMany({
       where,
       orderBy: {
-        createdAt: "desc",
+        createdAt: "asc",
       },
     });
 

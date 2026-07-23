@@ -44,6 +44,7 @@ export default function TTBPage() {
   const [modals, setModals] = React.useState<ModalData[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
   const [selectedItemIds, setSelectedItemIds] = React.useState<string[]>([]);
+  const [noPo, setNoPo] = React.useState<string>("");
   const reportRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -59,6 +60,24 @@ export default function TTBPage() {
       setSelectedItemIds(nonTtbIds);
     }
   }, [quoPpns]);
+
+  React.useEffect(() => {
+    const current = penawarans.find((p) => p.noQuo === filterNoQuo);
+    if (current && current.noPenawaran) {
+      fetch(`/api/report-inv?noPenawaran=${encodeURIComponent(current.noPenawaran)}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data && data.noPo) {
+            setNoPo(data.noPo);
+          } else {
+            setNoPo("");
+          }
+        })
+        .catch(() => setNoPo(""));
+    } else {
+      setNoPo("");
+    }
+  }, [filterNoQuo, penawarans]);
 
   const fetchPenawarans = async () => {
     try {
@@ -618,6 +637,14 @@ export default function TTBPage() {
               </span>
               <span style={{ color: "#000000" }}>
                 : {currentPenawaran?.noPenawaran || "-"}
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <span className="font-bold w-28" style={{ color: "#000000" }}>
+                No. PO
+              </span>
+              <span style={{ color: "#000000" }}>
+                : {noPo || "-"}
               </span>
             </div>
             <div className="flex gap-2">

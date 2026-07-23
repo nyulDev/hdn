@@ -85,6 +85,7 @@ export async function POST(request: Request) {
         },
         data: {
           atsn: atsn || null,
+          noPo: noPo || null,
           discount: discount ? parseFloat(discount) : null,
           location: location || null,
           pn: pn || null,
@@ -108,6 +109,7 @@ export async function POST(request: Request) {
         data: {
           noPenawaran: noPenawaran.trim(),
           atsn: atsn || null,
+          noPo: noPo || null,
           discount: discount ? parseFloat(discount) : null,
           location: location || null,
           pn: pn || null,

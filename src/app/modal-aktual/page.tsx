@@ -57,6 +57,33 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AppShell } from "@/components/app-shell";
 
+const formatNumberDisplay = (val: any) => {
+  if (val === null || val === undefined || val === '') return "";
+  const str = val.toString();
+  const [int, dec] = str.split(".");
+  const formattedInt = int.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return dec !== undefined ? `${formattedInt},${dec}` : formattedInt;
+};
+
+const FormattedInput = ({ value, onChange, readOnly, ...props }: any) => {
+  const handleChange = (e: any) => {
+    let val = e.target.value;
+    val = val.replace(/\./g, "").replace(/,/g, ".");
+    if (/^\d*\.?\d*$/.test(val)) {
+      if (onChange) onChange(val);
+    }
+  };
+  return (
+    <Input
+      type="text"
+      value={readOnly ? formatNumberDisplay(value) : formatNumberDisplay(value)}
+      onChange={readOnly ? undefined : handleChange}
+      readOnly={readOnly}
+      {...props}
+    />
+  );
+};
+
 export default function ModalAktualPage() {
   const [modals, setModals] = React.useState<any[]>([]);
   const [penawarans, setPenawarans] = React.useState<any[]>([]);
@@ -1099,15 +1126,12 @@ export default function ModalAktualPage() {
                 <div className="grid grid-cols-3 gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="qty">Qty</Label>
-                    <Input
-                      id="qty"
-                      type="number"
-                      step="0.01"
-                      placeholder="0"
+                    <FormattedInput
+                      id="qty" placeholder="0"
                       value={qty}
-                      onChange={(e) => setQty(e.target.value)}
+                      
                       required
-                    />
+                    onChange={setQty} />
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="satuan">Satuan</Label>
@@ -1121,50 +1145,42 @@ export default function ModalAktualPage() {
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="unitPrice">Nilai Aktual</Label>
-                    <Input
-                      id="unitPrice"
-                      type="number"
-                      step="1"
+                    <FormattedInput
+                      id="unitPrice" step="1"
                       placeholder="0"
                       value={unitPrice}
-                      onChange={(e) => setUnitPrice(e.target.value)}
+                      
                       required
-                    />
+                    onChange={setUnitPrice} />
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="disc">Disc</Label>
-                    <Input
-                      id="disc"
-                      type="number"
-                      step="1"
+                    <FormattedInput
+                      id="disc" step="1"
                       placeholder="0"
                       value={disc}
-                      onChange={(e) => setDisc(e.target.value)}
-                    />
+                      
+                    onChange={setDisc} />
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="onkir">Onkir</Label>
-                    <Input
-                      id="onkir"
-                      type="number"
-                      step="1"
+                    <FormattedInput
+                      id="onkir" step="1"
                       placeholder="0"
                       value={onkir}
-                      onChange={(e) => setOnkir(e.target.value)}
-                    />
+                      
+                    onChange={setOnkir} />
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="layanan">Layanan</Label>
-                    <Input
-                      id="layanan"
-                      type="number"
-                      step="1"
+                    <FormattedInput
+                      id="layanan" step="1"
                       placeholder="0"
                       value={layanan}
-                      onChange={(e) => setLayanan(e.target.value)}
-                    />
+                      
+                    onChange={setLayanan} />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -1179,15 +1195,13 @@ export default function ModalAktualPage() {
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="amount">Amount</Label>
-                    <Input
-                      id="amount"
-                      type="number"
-                      step="1"
+                    <FormattedInput
+                      id="amount" step="1"
                       placeholder="0"
                       value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
+                      
                       className="bg-muted"
-                    />
+                    onChange={setAmount} />
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -1223,29 +1237,23 @@ export default function ModalAktualPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="grid gap-1">
                   <Label htmlFor="discount">Discount</Label>
-                  <Input
-                    id="discount"
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
+                  <FormattedInput
+                    id="discount" placeholder="0.00"
                     value={discount}
-                    onChange={(e) => setDiscount(e.target.value)}
-                  />
+                    
+                  onChange={setDiscount} />
                 </div>
                 <div className="grid gap-1">
                   <Label htmlFor="totalModalSperpart">
                     Total Modal Sperpart
                   </Label>
-                  <Input
-                    id="totalModalSperpart"
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
+                  <FormattedInput
+                    id="totalModalSperpart" placeholder="0.00"
                     value={totalModalSperpart}
                     className="bg-muted/80 font-mono"
-                    readOnly
+                    
                     title={subtotalSource}
-                  />
+                  readOnly />
                   <span className="text-xs text-muted-foreground">
                     ({subtotalSource}) No. Quo {noQuo || "..."}
                   </span>
@@ -1255,27 +1263,21 @@ export default function ModalAktualPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="grid gap-1">
                   <Label htmlFor="bankCharge">Bank Charge (Direct Input)</Label>
-                  <Input
-                    id="bankCharge"
-                    type="number"
-                    step="0.01"
-                    placeholder="0"
+                  <FormattedInput
+                    id="bankCharge" placeholder="0"
                     value={bankCharge}
-                    onChange={(e) => setBankCharge(e.target.value)}
-                  />
+                    
+                  onChange={setBankCharge} />
                 </div>
                 <div className="grid gap-1">
                   <Label htmlFor="packingCost">
                     Packing Cost (Direct Input)
                   </Label>
-                  <Input
-                    id="packingCost"
-                    type="number"
-                    step="0.01"
-                    placeholder="0"
+                  <FormattedInput
+                    id="packingCost" placeholder="0"
                     value={packingCost}
-                    onChange={(e) => setPackingCost(e.target.value)}
-                  />
+                    
+                  onChange={setPackingCost} />
                 </div>
               </div>
 
@@ -1287,27 +1289,21 @@ export default function ModalAktualPage() {
                     <Label htmlFor="deliveryDutyTax">
                       Duty Tax (Direct Input)
                     </Label>
-                    <Input
-                      id="deliveryDutyTax"
-                      type="number"
-                      step="0.01"
-                      placeholder="0"
+                    <FormattedInput
+                      id="deliveryDutyTax" placeholder="0"
                       value={deliveryDutyTax}
-                      onChange={(e) => setDeliveryDutyTax(e.target.value)}
-                    />
+                      
+                    onChange={setDeliveryDutyTax} />
                   </div>
                   <div className="grid gap-1">
                     <Label htmlFor="deliveryLocalCost">
                       Local Cost (Direct Input)
                     </Label>
-                    <Input
-                      id="deliveryLocalCost"
-                      type="number"
-                      step="0.01"
-                      placeholder="0"
+                    <FormattedInput
+                      id="deliveryLocalCost" placeholder="0"
                       value={deliveryLocalCost}
-                      onChange={(e) => setDeliveryLocalCost(e.target.value)}
-                    />
+                      
+                    onChange={setDeliveryLocalCost} />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3 mt-2">
@@ -1315,27 +1311,21 @@ export default function ModalAktualPage() {
                     <Label htmlFor="deliveryAirDHL">
                       AIR (DHL) (Direct Input)
                     </Label>
-                    <Input
-                      id="deliveryAirDHL"
-                      type="number"
-                      step="0.01"
-                      placeholder="0"
+                    <FormattedInput
+                      id="deliveryAirDHL" placeholder="0"
                       value={deliveryAirDHL}
-                      onChange={(e) => setDeliveryAirDHL(e.target.value)}
-                    />
+                      
+                    onChange={setDeliveryAirDHL} />
                   </div>
                   <div className="grid gap-1">
                     <Label htmlFor="deliveryAirDoorToDoor">
                       AIR (Door to Door) (Direct Input)
                     </Label>
-                    <Input
-                      id="deliveryAirDoorToDoor"
-                      type="number"
-                      step="0.01"
-                      placeholder="0"
+                    <FormattedInput
+                      id="deliveryAirDoorToDoor" placeholder="0"
                       value={deliveryAirDoorToDoor}
-                      onChange={(e) => setDeliveryAirDoorToDoor(e.target.value)}
-                    />
+                      
+                    onChange={setDeliveryAirDoorToDoor} />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3 mt-2">
@@ -1343,27 +1333,21 @@ export default function ModalAktualPage() {
                     <Label htmlFor="deliverySeaResmi">
                       SEA (RESMI) (Direct Input)
                     </Label>
-                    <Input
-                      id="deliverySeaResmi"
-                      type="number"
-                      step="0.01"
-                      placeholder="0"
+                    <FormattedInput
+                      id="deliverySeaResmi" placeholder="0"
                       value={deliverySeaResmi}
-                      onChange={(e) => setDeliverySeaResmi(e.target.value)}
-                    />
+                      
+                    onChange={setDeliverySeaResmi} />
                   </div>
                   <div className="grid gap-1">
                     <Label htmlFor="deliverySeaDoorToDoor">
                       SEA (Door to Door) (Direct Input)
                     </Label>
-                    <Input
-                      id="deliverySeaDoorToDoor"
-                      type="number"
-                      step="0.01"
-                      placeholder="0"
+                    <FormattedInput
+                      id="deliverySeaDoorToDoor" placeholder="0"
                       value={deliverySeaDoorToDoor}
-                      onChange={(e) => setDeliverySeaDoorToDoor(e.target.value)}
-                    />
+                      
+                    onChange={setDeliverySeaDoorToDoor} />
                   </div>
                 </div>
               </div>
@@ -1371,14 +1355,11 @@ export default function ModalAktualPage() {
               <div className="grid grid-cols-2 gap-3 mt-2">
                 <div className="grid gap-1">
                   <Label htmlFor="feeKurir">Fee Kurir (Direct Input)</Label>
-                  <Input
-                    id="feeKurir"
-                    type="number"
-                    step="0.01"
-                    placeholder="0"
+                  <FormattedInput
+                    id="feeKurir" placeholder="0"
                     value={feeKurir}
-                    onChange={(e) => setFeeKurir(e.target.value)}
-                  />
+                    
+                  onChange={setFeeKurir} />
                 </div>
                 <div className="grid gap-1">
                   <div className="flex items-center gap-2">
@@ -1391,15 +1372,12 @@ export default function ModalAktualPage() {
                       HSI - 2 Bulan (8%)
                     </Label>
                   </div>
-                  <Input
-                    id="hsi"
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
+                  <FormattedInput
+                    id="hsi" placeholder="0.00"
                     value={hsi}
-                    readOnly
+                    
                     className="bg-muted cursor-not-allowed"
-                  />
+                  readOnly />
                 </div>
               </div>
 
@@ -1409,40 +1387,31 @@ export default function ModalAktualPage() {
                 <div className="grid grid-cols-3 gap-3 mt-2">
                   <div className="grid gap-1">
                     <Label htmlFor="otherCostTruck">Truck (Direct Input)</Label>
-                    <Input
-                      id="otherCostTruck"
-                      type="number"
-                      step="0.01"
-                      placeholder="0"
+                    <FormattedInput
+                      id="otherCostTruck" placeholder="0"
                       value={otherCostTruck}
-                      onChange={(e) => setOtherCostTruck(e.target.value)}
-                    />
+                      
+                    onChange={setOtherCostTruck} />
                   </div>
                   <div className="grid gap-1">
                     <Label htmlFor="otherCostServiceBoat">
                       Service Boat (Direct Input)
                     </Label>
-                    <Input
-                      id="otherCostServiceBoat"
-                      type="number"
-                      step="0.01"
-                      placeholder="0"
+                    <FormattedInput
+                      id="otherCostServiceBoat" placeholder="0"
                       value={otherCostServiceBoat}
-                      onChange={(e) => setOtherCostServiceBoat(e.target.value)}
-                    />
+                      
+                    onChange={setOtherCostServiceBoat} />
                   </div>
                   <div className="grid gap-1">
                     <Label htmlFor="otherCostLainLain">
                       Lain-lain (Direct Input)
                     </Label>
-                    <Input
-                      id="otherCostLainLain"
-                      type="number"
-                      step="0.01"
-                      placeholder="0"
+                    <FormattedInput
+                      id="otherCostLainLain" placeholder="0"
                       value={otherCostLainLain}
-                      onChange={(e) => setOtherCostLainLain(e.target.value)}
-                    />
+                      
+                    onChange={setOtherCostLainLain} />
                   </div>
                 </div>
               </div>
@@ -1769,14 +1738,11 @@ export default function ModalAktualPage() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="edit-qty">Qty</Label>
-                      <Input
-                        id="edit-qty"
-                        type="number"
-                        step="0.01"
-                        value={qty}
-                        onChange={(e) => setQty(e.target.value)}
+                      <FormattedInput
+                        id="edit-qty" value={qty}
+                        
                         required
-                      />
+                      onChange={setQty} />
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="edit-satuan">Satuan</Label>
@@ -1789,25 +1755,19 @@ export default function ModalAktualPage() {
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="edit-unitPrice">Nilai Aktual</Label>
-                      <Input
-                        id="edit-unitPrice"
-                        type="number"
-                        step="0.01"
-                        value={unitPrice}
-                        onChange={(e) => setUnitPrice(e.target.value)}
+                      <FormattedInput
+                        id="edit-unitPrice" value={unitPrice}
+                        
                         required
-                      />
+                      onChange={setUnitPrice} />
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="edit-amount">Amount</Label>
-                      <Input
-                        id="edit-amount"
-                        type="number"
-                        step="0.01"
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
+                      <FormattedInput
+                        id="edit-amount" value={amount}
+                        
                         className="bg-muted"
-                      />
+                      onChange={setAmount} />
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="edit-namaToko">Nama Toko</Label>
@@ -1821,36 +1781,30 @@ export default function ModalAktualPage() {
                     <div className="grid grid-cols-3 gap-4">
                       <div className="grid gap-2">
                         <Label htmlFor="edit-disc">Disc</Label>
-                        <Input
-                          id="edit-disc"
-                          type="number"
-                          step="1"
+                        <FormattedInput
+                          id="edit-disc" step="1"
                           placeholder="0"
                           value={disc}
-                          onChange={(e) => setDisc(e.target.value)}
-                        />
+                          
+                        onChange={setDisc} />
                       </div>
                       <div className="grid gap-2">
                         <Label htmlFor="edit-onkir">Onkir</Label>
-                        <Input
-                          id="edit-onkir"
-                          type="number"
-                          step="1"
+                        <FormattedInput
+                          id="edit-onkir" step="1"
                           placeholder="0"
                           value={onkir}
-                          onChange={(e) => setOnkir(e.target.value)}
-                        />
+                          
+                        onChange={setOnkir} />
                       </div>
                       <div className="grid gap-2">
                         <Label htmlFor="edit-layanan">Layanan</Label>
-                        <Input
-                          id="edit-layanan"
-                          type="number"
-                          step="1"
+                        <FormattedInput
+                          id="edit-layanan" step="1"
                           placeholder="0"
                           value={layanan}
-                          onChange={(e) => setLayanan(e.target.value)}
-                        />
+                          
+                        onChange={setLayanan} />
                       </div>
                     </div>
                   </div>
