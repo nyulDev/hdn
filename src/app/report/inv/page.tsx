@@ -669,9 +669,8 @@ export default function INVPage() {
                 return (
                   <label
                     key={item.id}
-                    className={`flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-gray-50 transition-colors ${
-                      isCompleted ? "opacity-50 cursor-not-allowed" : ""
-                    }`}
+                    className={`flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-gray-50 transition-colors ${isCompleted ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
                   >
                     <input
                       type="checkbox"
@@ -806,36 +805,36 @@ export default function INVPage() {
           </div>
 
           {/* Data Dokumen Kanan */}
-          <div className="text-xs flex flex-col gap-1 w-64">
-            <div className="flex justify-between">
-              <span className="font-bold w-32">NO</span>
-              <span className="w-32">: {formattedNoINV}</span>
+          <div className="text-xs flex flex-col gap-1 w-[300px]">
+            <div className="flex items-start">
+              <span className="font-bold w-28 shrink-0">NO</span>
+              <span className="flex-1 break-words">: {formattedNoINV}</span>
             </div>
 
-            <div className="flex justify-between">
-              <span className="font-bold w-32">NO. PO</span>
-              <span className="w-32">: {noPo || "-"}</span>
+            <div className="flex items-start">
+              <span className="font-bold w-28 shrink-0">NO. PO</span>
+              <span className="flex-1 break-words">: {noPo || "-"}</span>
             </div>
 
-            <div className="flex justify-between">
-              <span className="font-bold w-32">CUSTOMER ID</span>
-              <span className="w-32">
+            <div className="flex items-start">
+              <span className="font-bold w-28 shrink-0">CUSTOMER ID</span>
+              <span className="flex-1 break-words">
                 : {currentCustomer?.customerId || "-"}
               </span>
             </div>
-            <div className="flex justify-between">
-              <span className="font-bold w-32">DATE</span>
-              <span className="w-32">
+            <div className="flex items-start">
+              <span className="font-bold w-28 shrink-0">DATE</span>
+              <span className="flex-1 break-words">
                 : {filterNoRfs ? formatDate(today) : "-"}
               </span>
             </div>
-            <div className="flex justify-between">
-              <span className="font-bold w-32">PAGE</span>
-              <span className="w-32">: {filterNoRfs ? totalPages : "-"}</span>
+            <div className="flex items-start">
+              <span className="font-bold w-28 shrink-0">PAGE</span>
+              <span className="flex-1 break-words">: {filterNoRfs ? totalPages : "-"}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="font-bold w-32">LOCATION</span>
-              <span className="w-32">: {currentLocation}</span>
+            <div className="flex items-start">
+              <span className="font-bold w-28 shrink-0">LOCATION</span>
+              <span className="flex-1 break-words">: {currentLocation}</span>
             </div>
           </div>
         </div>
