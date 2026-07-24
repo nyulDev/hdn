@@ -805,7 +805,7 @@ export default function INVPage() {
           </div>
 
           {/* Data Dokumen Kanan */}
-          <div className="text-xs flex flex-col gap-1 w-[300px]">
+          <div className="text-xs flex flex-col gap-1 w-[350px]">
             <div className="flex items-start">
               <span className="font-bold w-28 shrink-0">NO</span>
               <span className="flex-1 break-words">: {formattedNoINV}</span>

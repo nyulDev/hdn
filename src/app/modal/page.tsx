@@ -242,21 +242,30 @@ export default function ModalPage() {
 
     const existingCost = modalCosts.find((c) => c.noQuo === penawaran.noQuo);
 
+    const getMultiplier = (
+      actualValue: number | null | undefined,
+      defaultValue: number,
+    ) => {
+      if (actualValue === null || actualValue === undefined) return "";
+      if (!defaultValue || defaultValue === 0) return "";
+      return (actualValue / defaultValue).toString();
+    };
+
     if (existingCost) {
       setDiscount(existingCost.discount?.toString() || "");
       setTotalModalSperpart(existingCost.totalModalSperpart?.toString() || "");
-      setBankCharge(existingCost.bankCharge?.toString() || "");
-      setPackingCost(existingCost.packingCost?.toString() || "");
+      setBankCharge(getMultiplier(existingCost.bankCharge, defaultCosts.bankCharge));
+      setPackingCost(getMultiplier(existingCost.packingCost, defaultCosts.packingCost));
       setDeliveryDutyTax(existingCost.deliveryDutyTaxPercent?.toString() || "");
-      setDeliveryAirDHL(existingCost.deliveryAirDHL?.toString() || "");
+      setDeliveryAirDHL(getMultiplier(existingCost.deliveryAirDHL, defaultCosts.deliveryAirDHL));
       setDeliveryAirDoorToDoor(
-        existingCost.deliveryAirDoorToDoor?.toString() || "",
+        getMultiplier(existingCost.deliveryAirDoorToDoor, defaultCosts.deliveryAirDoorToDoor),
       );
-      setDeliverySeaResmi(existingCost.deliverySeaResmi?.toString() || "");
+      setDeliverySeaResmi(getMultiplier(existingCost.deliverySeaResmi, defaultCosts.deliverySeaResmi));
       setDeliverySeaDoorToDoor(
-        existingCost.deliverySeaDoorToDoor?.toString() || "",
+        getMultiplier(existingCost.deliverySeaDoorToDoor, defaultCosts.deliverySeaDoorToDoor),
       );
-      setDeliveryLocalCost(existingCost.deliveryLocalCost?.toString() || "");
+      setDeliveryLocalCost(getMultiplier(existingCost.deliveryLocalCost, defaultCosts.deliveryLocalCost));
       setFeeKurir(existingCost.feeKurir?.toString() || "");
       setOtherCostTruck(existingCost.otherCostTruck?.toString() || "");
       setOtherCostServiceBoat(
